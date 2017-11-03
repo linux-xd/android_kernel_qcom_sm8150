@@ -265,6 +265,7 @@ union bpf_attr {
 		__u32		kern_version;	/* checked when prog_type=kprobe */
 		__u32		prog_flags;
 		char		prog_name[BPF_OBJ_NAME_LEN];
+		__u32		prog_target_ifindex;	/* ifindex of netdev to prep for */
 	};
 
 	struct
