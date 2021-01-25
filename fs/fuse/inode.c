@@ -994,6 +994,12 @@ static int free_fuse_passthrough(int id, void *p, void *data)
 	struct fuse_passthrough *passthrough = (struct fuse_passthrough *)p;
 
 	fuse_passthrough_release(passthrough);
+	kfree(p);
+
+	return 0;
+}
+
+	fuse_passthrough_release(passthrough);
 {
 	WARN_ON(!list_empty(&fc->devices));
 	idr_for_each(&fc->passthrough_req, free_fuse_passthrough, NULL);
