@@ -304,8 +304,6 @@ enum rw_hint {
 /* iocb->ki_waitq is valid */
 #define IOCB_WAITQ		(1 << 19)
 #define IOCB_NOIO		(1 << 20)
-/* kiocb is a read or write operation submitted by fs/aio.c. */
-#define IOCB_AIO_RW		(1 << 23)
 
 struct kiocb {
 	struct file		*ki_filp;
@@ -3307,9 +3305,9 @@ static inline int kiocb_set_rw_flags(struct kiocb *ki, rwf_t flags)
 	}
 	kiocb_flags |= (__force int)(flags & RWF_SUPPORTED);
 	if (flags & RWF_SYNC)
-		ki->ki_flags |= (IOCB_DSYNC | IOCB_SYNC);
-	if (flags & RWF_APPEND)
-		ki->ki_flags |= IOCB_APPEND;
+		kiocb_flags |= IOCB_DSYNC;
+
+	ki->ki_flags |= kiocb_flags;
 	return 0;
 }
 
