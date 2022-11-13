@@ -6,33 +6,34 @@ else
 	KERNEL_BUILD := 0
 endif
 
+
 ifeq ($(KERNEL_BUILD), 1)
 	# These are configurable via Kconfig for kernel-based builds
 	# Need to explicitly configure for Android-based builds
-	AUDIO_BLD_DIR := $(shell pwd)/kernel/msm-4.14
+	AUDIO_BLD_DIR := $(ANDROID_BUILD_TOP)/kernel/msm-4.14
 	AUDIO_ROOT := $(AUDIO_BLD_DIR)/techpack/audio
 endif
 
 ifeq ($(KERNEL_BUILD), 0)
-	# These are configurable via Kconfig for kernel-based builds
-	# Need to explicitly configure for Android-based builds
-
+	ifeq ($(CONFIG_ARCH_SDM845), y)
+		include $(AUDIO_ROOT)/config/sdm845auto.conf
+		export
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm845autoconf.h
+	endif
 	ifeq ($(CONFIG_ARCH_SDM670), y)
-		include $(AUDIO_ROOT)/config/sdm670auto.conf
+		include $(AUDIO_ROOT)/config/sdm710auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sdm670autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm710autoconf.h
 	endif
-
-	ifeq ($(CONFIG_ARCH_SM8150), y)
-		include $(AUDIO_ROOT)/config/sm8150auto.conf
+	ifeq ($(CONFIG_ARCH_SDM450), y)
+		include $(AUDIO_ROOT)/config/sdm710auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sdm710autoconf.h
 	endif
-
-	ifeq ($(CONFIG_ARCH_SDMSHRIKE), y)
-		include $(AUDIO_ROOT)/config/sm8150auto.conf
+	ifeq ($(CONFIG_ARCH_SM6150), y)
+		include $(AUDIO_ROOT)/config/sm6150auto.conf
 		export
-		INCS    +=  -include $(AUDIO_ROOT)/config/sm8150autoconf.h
+		INCS    +=  -include $(AUDIO_ROOT)/config/sm6150autoconf.h
 	endif
 endif
 
@@ -60,23 +61,23 @@ UAPI_INC :=	-I$(AUDIO_ROOT)/include/$(UAPI_DIR)
 COMMON_DIR :=	include
 COMMON_INC :=	-I$(AUDIO_ROOT)/$(COMMON_DIR)
 
-# for AQT1000 Codec
-ifeq ($(CONFIG_SND_SOC_AQT1000), m)
-	AQT1000_CDC_OBJS += aqt1000-regmap.o
-	AQT1000_CDC_OBJS += aqt1000-utils.o
-	AQT1000_CDC_OBJS += aqt1000-core.o
-	AQT1000_CDC_OBJS += aqt1000-irq.o
-	AQT1000_CDC_OBJS += aqt1000-clsh.o
-	AQT1000_CDC_OBJS += aqt1000.o
-	AQT1000_CDC_OBJS += aqt1000-mbhc.o
+############ tfa98xx ############
+
+# for nxp tfa98xx Codec
+ifdef CONFIG_SND_SOC_TFA9894
+	TFA98XX_OBJS += tfa_container_v6.o
+	TFA98XX_OBJS += tfa98xx_v6.o
+	TFA98XX_OBJS += tfa_dsp_v6.o
+	TFA98XX_OBJS += tfa_init_v6.o
 endif
 
 LINUX_INC +=	-Iinclude/linux
 
-INCS +=	$(COMMON_INC) \
-	$(UAPI_INC)
+INCS +=		$(COMMON_INC) \
+		$(UAPI_INC)
 
 EXTRA_CFLAGS += $(INCS)
+
 
 CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DANI_LITTLE_BIT_ENDIAN \
@@ -86,6 +87,13 @@ CDEFINES +=	-DANI_LITTLE_BYTE_ENDIAN \
 		-DPTT_SOCK_SVC_ENABLE \
 		-Wall\
 		-D__linux__
+
+#ifdef VENDOR_EDIT
+#Huiqun.Han@PSW.MM.AudioDriver.Codec, 2018/08/17, Add for new speaker
+ifneq ($(filter MSM_18181 MSM_18385 MSM_18097 MSM_18397 MSM_18041 MSM_18539, $(OPPO_TARGET_DEVICE)),)
+CDEFINES += -DSPKR_RES_48_75_OHM
+endif
+#endif /* VENDOR_EDIT *
 
 KBUILD_CPPFLAGS += $(CDEFINES)
 
@@ -108,13 +116,8 @@ KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/dsp/Module
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/Module.symvers
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/Module.symvers
 KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/soc/Module.symvers
-KBUILD_EXTRA_SYMBOLS +=$(OUT)/obj/vendor/qcom/opensource/audio-kernel/asoc/codecs/aqt1000/Module.symvers
-endif
-
-ifeq ($(CONFIG_SND_SOC_GCOV), y)
-GCOV_PROFILE := y
 endif
 
 # Module information used by KBuild framework
-obj-$(CONFIG_SND_SOC_AQT1000) += aqt1000_cdc_dlkm.o
-aqt1000_cdc_dlkm-y := $(AQT1000_CDC_OBJS)
+obj-$(CONFIG_SND_SOC_TFA9894) += tfa98xx-v6_dlkm.o
+tfa98xx-v6_dlkm-y := $(TFA98XX_OBJS)
